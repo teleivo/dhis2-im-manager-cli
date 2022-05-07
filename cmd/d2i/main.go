@@ -23,19 +23,27 @@ func run(args []string, out io.Writer) error {
 	url := fs.String("url", "", "Instance manager URL")
 	user := fs.String("user", "", "User to login and perform actions on the instance manager")
 	pw := fs.String("pw", "", "Password of user")
+	name := fs.String("name", "", "Name of the instance to be created/deployed")
+	// TODO allow passing in the name of the group
+	group := fs.Int("group", 2, "Group to perform actions on the instance manager")
+	// TODO allow passing in the name of the stack
+	stack := fs.Int("stack", 1, "Group to perform actions on the instance manager")
 	err := fs.Parse(args[1:])
 	if err != nil {
 		return err
 	}
-	// TODO check args if valid
-	if *url == "" || *user == "" || *pw == "" {
-		return errors.New("url, user and pw are required")
+	if *url == "" || *user == "" || *pw == "" || *name == "" {
+		return errors.New("url, user, pw and name are required")
 	}
 
 	// TODO set some timeouts
 	client := &http.Client{}
 	im := instance.NewManager(*url, *user, *pw, client)
 	err = im.Login()
+	if err != nil {
+		return err
+	}
+	err = im.Create(*name, *group, *stack)
 	if err != nil {
 		return err
 	}
