@@ -1,10 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
+
+	instance "github.com/teleivo/dhis2-im-manager-tui"
 )
 
 func main() {
@@ -16,16 +20,26 @@ func main() {
 
 func run(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	end := fs.String("end", "now", "Suffix to print in greeting")
+	url := fs.String("url", "", "Instance manager URL")
+	user := fs.String("user", "", "User to login and perform actions on the instance manager")
+	pw := fs.String("pw", "", "Password of user")
 	err := fs.Parse(args[1:])
 	if err != nil {
 		return err
 	}
+	// TODO check args if valid
+	if *url == "" || *user == "" || *pw == "" {
+		return errors.New("url, user and pw are required")
+	}
 
-	fmt.Fprint(out, concat("Go build it ", *end))
+	// TODO set some timeouts
+	client := &http.Client{}
+	im := instance.NewManager(*url, *user, *pw, client)
+	err = im.Login()
+	if err != nil {
+		return err
+	}
+
+	_ = out
 	return nil
-}
-
-func concat(a, b string) string {
-	return a + b
 }

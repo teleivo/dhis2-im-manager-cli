@@ -1,4 +1,4 @@
-module github.com/teleivo/go-template
+module github.com/teleivo/dhis2-im-manager-tui
 
 go 1.18
 
