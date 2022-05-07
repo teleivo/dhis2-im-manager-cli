@@ -43,7 +43,18 @@ func run(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = im.Create(*name, *group, *stack)
+	_ = group
+	// err = im.Create(*name, *group, *stack)
+	// if err != nil {
+	// 	return err
+	// }
+	fmt.Println("stacks")
+	err = im.Stacks()
+	if err != nil {
+		return err
+	}
+	fmt.Println("stack", *stack)
+	err = im.Stack(*stack)
 	if err != nil {
 		return err
 	}

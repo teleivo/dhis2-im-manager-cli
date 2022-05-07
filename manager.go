@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type Manager struct {
@@ -54,9 +55,6 @@ func (m *Manager) Login() error {
 		return errors.New("login failed: token is empty")
 	}
 	m.token = tb.Token
-
-	// TODO remove
-	fmt.Println(tb.Token)
 
 	return nil
 }
@@ -108,7 +106,88 @@ func (m *Manager) Create(name string, group, stack int) error {
 	}
 
 	// TODO remove
-	fmt.Println(cb)
+	fmt.Printf("%+v\n", cb)
+
+	return nil
+}
+
+type optionalParam struct {
+	ID           int    `json:"ID"`
+	Name         string `json:"Name"`
+	DefaultValue string `json:"DefaultValue"`
+}
+
+type requiredParam struct {
+	ID   int    `json:"ID"`
+	Name string `json:"Name"`
+}
+
+// TODO Instances? and parameters
+type stackBody struct {
+	ID             int             `json:"ID"`
+	Name           string          `json:"name"`
+	OptionalParams []optionalParam `json:"optionalParameters"`
+	RequiredParams []requiredParam `json:"requiredParameters"`
+}
+
+func (m *Manager) Stack(id int) error {
+	req, err := http.NewRequest(http.MethodGet, m.url+"/stacks/"+strconv.Itoa(id), nil)
+	if err != nil {
+		return err
+	}
+	// TODO assumes Login() was called/and token is not expired
+	req.Header.Add("Authorization", "Bearer "+m.token)
+	resp, err := m.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("fetching stack failed: expected HTTP status 200, got %s", resp.Status)
+	}
+
+	d := json.NewDecoder(resp.Body)
+	sb := &stackBody{}
+	if err := d.Decode(sb); err != nil {
+		return err
+	}
+
+	// TODO remove
+	fmt.Printf("%+v\n", sb)
+
+	return nil
+}
+
+type stacksBody struct {
+	ID   int    `json:"ID"`
+	Name string `json:"name"`
+}
+
+func (m *Manager) Stacks() error {
+	req, err := http.NewRequest(http.MethodGet, m.url+"/stacks/", nil)
+	if err != nil {
+		return err
+	}
+	// TODO assumes Login() was called/and token is not expired
+	req.Header.Add("Authorization", "Bearer "+m.token)
+	resp, err := m.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("fetching stacks failed: expected HTTP status 200, got %s", resp.Status)
+	}
+
+	d := json.NewDecoder(resp.Body)
+	// TODO
+	var sb []stacksBody
+	if err := d.Decode(&sb); err != nil {
+		return err
+	}
+
+	// TODO remove
+	fmt.Printf("%+v\n", sb)
 
 	return nil
 }
