@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	instance "github.com/teleivo/dhis2-im-manager-tui"
+	instance "github.com/teleivo/dhis2-im-manager-cli"
 )
 
 func main() {
