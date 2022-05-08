@@ -2,6 +2,7 @@ package instance
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,8 +20,10 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
 type model struct {
-	manager *Manager
-	list    list.Model
+	manager  *Manager
+	list     list.Model
+	stacks   []Stacks
+	curStack *Stack
 }
 
 func NewStacks(im *Manager) model {
@@ -37,7 +40,10 @@ func (m model) Init() tea.Cmd {
 	return m.fetchStacks()
 }
 
-type stacksMsg []list.Item
+type stacksMsg struct {
+	stacks []Stacks
+	items  []list.Item
+}
 
 func (m model) fetchStacks() tea.Cmd {
 	return func() tea.Msg {
@@ -49,8 +55,12 @@ func (m model) fetchStacks() tea.Cmd {
 		for _, st := range sts {
 			items = append(items, item{title: fmt.Sprintf("%s (%d)", st.Name, st.ID)})
 		}
-		return stacksMsg(items)
+		return stacksMsg{stacks: sts, items: items}
 	}
+}
+
+type stackMsg struct {
+	stack *Stack
 }
 
 func (m model) fetchStack(id int) tea.Cmd {
@@ -59,9 +69,7 @@ func (m model) fetchStack(id int) tea.Cmd {
 		if err != nil {
 			return err
 		}
-		// TODO what type of msg do I need for a pager?
-		_ = st
-		return nil
+		return stackMsg{stack: st}
 	}
 }
 
@@ -69,15 +77,25 @@ func (m model) fetchStack(id int) tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "enter":
+			st := m.stacks[m.list.Index()]
+			return m, m.fetchStack(st.ID)
 		}
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 	case stacksMsg:
-		cmd := m.list.SetItems(msg)
+		m.stacks = msg.stacks
+		cmd := m.list.SetItems(msg.items)
 		return m, cmd
+	case stackMsg:
+		m.curStack = msg.stack
+		// TODO any cmd necessary?
+		// TODO should curStack be cleared at any point?
+		return m, m.list.NewStatusMessage(fmt.Sprintf("%+v", m.curStack.RequiredParams))
 	}
 
 	newList, cmd := m.list.Update(msg)
@@ -86,5 +104,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return docStyle.Render(m.list.View())
+	var doc strings.Builder
+	// TODO implement view of m.curStack
+	list := docStyle.Render(m.list.View())
+
+	if m.curStack != nil {
+		doc.WriteString(lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			docStyle.Align(lipgloss.Right).Render(fmt.Sprintf("%v", m.curStack)),
+			list,
+		))
+	} else {
+		doc.WriteString(list)
+	}
+
+	return doc.String()
 }
