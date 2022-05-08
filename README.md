@@ -1,6 +1,6 @@
-# DHIS2 Instance Manager TUI
+# DHIS2 Instance Manager CLI
 
-Terminal UI for interacting with the [DHIS2 Instance manager](https://github.com/dhis2-sre/im-manager).
+CLI for interacting with the [DHIS2 Instance manager](https://github.com/dhis2-sre/im-manager).
 
 ## Usage
 
