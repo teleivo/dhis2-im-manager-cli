@@ -76,22 +76,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 	case stacksMsg:
-		// TODO what is the "correct" way of updating?
-		mn := model{
-			manager: m.manager,
-			list:    list.New(stacksMsg(msg), list.NewDefaultDelegate(), 0, 0),
-		}
-		mn.list.SetSize(m.list.Width(), m.list.Height())
-		mn.list.Title = "Stacks"
-
-		return mn, nil
+		cmd := m.list.SetItems(msg)
+		return m, cmd
 	}
 
-	// TODO why is this one not doing the update of the list?
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	// TODO create a cmd for fetching the stack details
-	// tea.Batch(cmds...)
+	newList, cmd := m.list.Update(msg)
+	m.list = newList
 	return m, cmd
 }
 
