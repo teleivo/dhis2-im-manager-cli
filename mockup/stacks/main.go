@@ -50,7 +50,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	var doc strings.Builder
-	// TODO implement view of m.curStack
 	list := docStyle.Render(m.list.View())
 	curStack, _ := json.MarshalIndent(m.curStack, "", "  ")
 

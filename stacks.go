@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -20,10 +21,11 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
 type model struct {
-	manager  *Manager
-	list     list.Model
-	stacks   []Stacks
-	curStack *Stack
+	manager      *Manager
+	list         list.Model
+	stacks       []Stacks
+	curStack     *Stack
+	curStackJson string
 }
 
 func NewStacks(im *Manager) model {
@@ -60,20 +62,29 @@ func (m model) fetchStacks() tea.Cmd {
 }
 
 type stackMsg struct {
-	stack *Stack
+	stack     *Stack
+	stackJson string
 }
 
 func (m model) fetchStack(id int) tea.Cmd {
 	return func() tea.Msg {
 		st, err := m.manager.Stack(id)
+		// TODO put into message and handle in view
 		if err != nil {
 			return err
 		}
-		return stackMsg{stack: st}
+		stackJson, err := json.MarshalIndent(st, "", "  ")
+		if err != nil {
+			return err
+		}
+		return stackMsg{
+			stack:     st,
+			stackJson: string(stackJson),
+		}
 	}
 }
 
-// TODO show details in pager on the right
+// TODO load JSON when moving between list entries
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -93,9 +104,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	case stackMsg:
 		m.curStack = msg.stack
+		m.curStackJson = msg.stackJson
 		// TODO any cmd necessary?
 		// TODO should curStack be cleared at any point?
-		return m, m.list.NewStatusMessage(fmt.Sprintf("%+v", m.curStack.RequiredParams))
+		// TODO return model and nil or fall through?
+		return m, nil
 	}
 
 	newList, cmd := m.list.Update(msg)
@@ -105,14 +118,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	var doc strings.Builder
-	// TODO implement view of m.curStack
 	list := docStyle.Render(m.list.View())
 
+	// TODO use a pager for the JSON
 	if m.curStack != nil {
 		doc.WriteString(lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			docStyle.Align(lipgloss.Right).Render(fmt.Sprintf("%v", m.curStack)),
 			list,
+			docStyle.Render(m.curStackJson),
 		))
 	} else {
 		doc.WriteString(list)
