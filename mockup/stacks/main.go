@@ -6,7 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	instance "github.com/teleivo/dhis2-im-manager-cli"
@@ -23,7 +25,9 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
 type model struct {
+	ready    bool
 	list     list.Model
+	viewport viewport.Model
 	curStack *instance.Stack
 }
 
@@ -32,32 +36,42 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+			// case "ctrl+d", "ctrl+u":
+			// TODO pass on to viewport?
 		}
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
+
+		// TODO set size of viewport
 	}
 
 	newList, cmd := m.list.Update(msg)
+	cmds = append(cmds, cmd)
 	m.list = newList
-	return m, cmd
+
+	// Handle keyboard and mouse events in the viewport
+	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
 	var doc strings.Builder
 	list := docStyle.Render(m.list.View())
-	curStack, _ := json.MarshalIndent(m.curStack, "", "  ")
 
 	if m.curStack != nil {
 		doc.WriteString(lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			list,
-			docStyle.Render(string(curStack)),
+			docStyle.Render(m.viewport.View()),
 		))
 	} else {
 		doc.WriteString(list)
@@ -71,24 +85,61 @@ func main() {
 		item{title: "DHIS2 (1)"},
 		item{title: "DHIS2 DB (2)"},
 	}
-	m := model{
-		curStack: &instance.Stack{
-			ID:   1,
-			Name: "DHIS2",
-			OptionalParams: []instance.OptionalParam{
-				{
-					ID:   12,
-					Name: "LOG4J2_CONFIGURATION_FILE",
-				},
+
+	curStack := &instance.Stack{
+		ID:   1,
+		Name: "DHIS2",
+		OptionalParams: []instance.OptionalParam{
+			{
+				ID:   12,
+				Name: "LOG4J2_CONFIGURATION_FILE",
 			},
-			RequiredParams: []instance.RequiredParam{
-				{
-					ID:   34,
-					Name: "DB_HOST",
-				},
+			{
+				ID:   12,
+				Name: "LOG4J2_CONFIGURATION_FILE",
+			},
+			{
+				ID:   12,
+				Name: "LOG4J2_CONFIGURATION_FILE",
+			},
+			{
+				ID:   12,
+				Name: "LOG4J2_CONFIGURATION_FILE",
+			},
+			{
+				ID:   12,
+				Name: "LOG4J2_CONFIGURATION_FILE",
 			},
 		},
-		list: list.New(items, list.NewDefaultDelegate(), 0, 0),
+		RequiredParams: []instance.RequiredParam{
+			{
+				ID:   34,
+				Name: "DB_HOST",
+			},
+		},
+	}
+	stackDetails, _ := json.MarshalIndent(curStack, "", "  ")
+	view := viewport.New(40, 30)
+	view.SetContent(string(stackDetails))
+	view.KeyMap = viewport.KeyMap{
+		PageDown: key.NewBinding(
+			key.WithKeys("pgdown", " ", "f"),
+		),
+		PageUp: key.NewBinding(
+			key.WithKeys("pgup", "b"),
+		),
+		Up: key.NewBinding(
+			key.WithKeys("u", "ctrl+u"),
+		),
+		Down: key.NewBinding(
+			key.WithKeys("d", "ctrl+d"),
+		),
+	}
+
+	m := model{
+		curStack: curStack,
+		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
+		viewport: view,
 	}
 	m.list.Title = "Stacks"
 
