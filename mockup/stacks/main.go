@@ -99,6 +99,8 @@ func main() {
 }
 
 func run() error {
+	// TODO hacky since it only works running this mockup from within stacks
+	// folder
 	sts, err := os.ReadFile("stacks.json")
 	if err != nil {
 		return err
@@ -113,7 +115,8 @@ func run() error {
 		items = append(items, item{title: fmt.Sprintf("%s (%d)", v.Name, v.ID)})
 	}
 	list := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	list.Title = "Stacks"
+	list.SetShowTitle(false)
+	list.SetShowHelp(false)
 
 	curStack, err := os.ReadFile("stack.json")
 	if err != nil {
