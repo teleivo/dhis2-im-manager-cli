@@ -1,0 +1,146 @@
+{
+  "ID": 1,
+  "CreatedAt": "2022-05-11T11:15:37.150645Z",
+  "UpdatedAt": "2022-05-11T11:15:37.150645Z",
+  "DeletedAt": null,
+  "Name": "dhis2",
+  "requiredParameters": [
+    {
+      "ID": 1,
+      "CreatedAt": "2022-05-11T11:15:37.152658Z",
+      "UpdatedAt": "2022-05-11T11:15:37.152658Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "DATABASE_ID"
+    }
+  ],
+  "optionalParameters": [
+    {
+      "ID": 1,
+      "CreatedAt": "2022-05-11T11:15:37.155476Z",
+      "UpdatedAt": "2022-05-11T11:15:37.155476Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "CHART_VERSION",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 2,
+      "CreatedAt": "2022-05-11T11:15:37.157534Z",
+      "UpdatedAt": "2022-05-11T11:15:37.157534Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "FLYWAY_REPAIR_BEFORE_MIGRATION",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 3,
+      "CreatedAt": "2022-05-11T11:15:37.158786Z",
+      "UpdatedAt": "2022-05-11T11:15:37.158786Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "INSTANCE_TTL",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 4,
+      "CreatedAt": "2022-05-11T11:15:37.159987Z",
+      "UpdatedAt": "2022-05-11T11:15:37.159987Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "DATABASE_NAME",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 5,
+      "CreatedAt": "2022-05-11T11:15:37.161254Z",
+      "UpdatedAt": "2022-05-11T11:15:37.161254Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "FLYWAY_MIGRATE_OUT_OF_ORDER",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 6,
+      "CreatedAt": "2022-05-11T11:15:37.16251Z",
+      "UpdatedAt": "2022-05-11T11:15:37.16251Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "DATABASE_SIZE",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 7,
+      "CreatedAt": "2022-05-11T11:15:37.163754Z",
+      "UpdatedAt": "2022-05-11T11:15:37.163754Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "IMAGE_TAG",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 8,
+      "CreatedAt": "2022-05-11T11:15:37.164798Z",
+      "UpdatedAt": "2022-05-11T11:15:37.164798Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "READINESS_PROBE_INITIAL_DELAY_SECONDS",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 9,
+      "CreatedAt": "2022-05-11T11:15:37.1658Z",
+      "UpdatedAt": "2022-05-11T11:15:37.1658Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "JAVA_OPTS",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 10,
+      "CreatedAt": "2022-05-11T11:15:37.166911Z",
+      "UpdatedAt": "2022-05-11T11:15:37.166911Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "DATABASE_VERSION",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 11,
+      "CreatedAt": "2022-05-11T11:15:37.167921Z",
+      "UpdatedAt": "2022-05-11T11:15:37.167921Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "DATABASE_USERNAME",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 12,
+      "CreatedAt": "2022-05-11T11:15:37.169166Z",
+      "UpdatedAt": "2022-05-11T11:15:37.169166Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "DATABASE_PASSWORD",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 13,
+      "CreatedAt": "2022-05-11T11:15:37.170348Z",
+      "UpdatedAt": "2022-05-11T11:15:37.170348Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "IMAGE_REPOSITORY",
+      "DefaultValue": ""
+    },
+    {
+      "ID": 14,
+      "CreatedAt": "2022-05-11T11:15:37.171804Z",
+      "UpdatedAt": "2022-05-11T11:15:37.171804Z",
+      "DeletedAt": null,
+      "StackID": 1,
+      "Name": "LIVENESS_PROBE_INITIAL_DELAY_SECONDS",
+      "DefaultValue": ""
+    }
+  ],
+  "Instances": null
+}

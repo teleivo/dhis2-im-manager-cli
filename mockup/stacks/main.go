@@ -28,7 +28,7 @@ type model struct {
 	ready    bool
 	list     list.Model
 	viewport viewport.Model
-	curStack *instance.Stack
+	curStack string
 }
 
 func (m model) Init() tea.Cmd {
@@ -42,21 +42,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
-			// case "ctrl+d", "ctrl+u":
-			// TODO pass on to viewport?
 		}
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
+		// TODO split space "equally" between the list and the viewport
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 
-		// TODO set size of viewport
+		if !m.ready {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport.Width = msg.Width - h
+			m.viewport.Height = msg.Height - v
+			m.viewport.SetContent(m.curStack)
+			m.ready = true
+		} else {
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height - v
+		}
 	}
 
-	newList, cmd := m.list.Update(msg)
+	// Handle keyboard and mouse events
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
-	m.list = newList
-
-	// Handle keyboard and mouse events in the viewport
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -67,7 +78,7 @@ func (m model) View() string {
 	var doc strings.Builder
 	list := docStyle.Render(m.list.View())
 
-	if m.curStack != nil {
+	if m.curStack != "" {
 		doc.WriteString(lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			list,
@@ -81,46 +92,35 @@ func (m model) View() string {
 }
 
 func main() {
-	items := []list.Item{
-		item{title: "DHIS2 (1)"},
-		item{title: "DHIS2 DB (2)"},
+	if err := run(); err != nil {
+		fmt.Printf("Program failed: %s\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	sts, err := os.ReadFile("stacks.json")
+	if err != nil {
+		return err
+	}
+	var stacks []instance.Stacks
+	err = json.Unmarshal(sts, &stacks)
+	if err != nil {
+		return err
+	}
+	var items []list.Item
+	for _, v := range stacks {
+		items = append(items, item{title: fmt.Sprintf("%s (%d)", v.Name, v.ID)})
+	}
+	list := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	list.Title = "Stacks"
+
+	curStack, err := os.ReadFile("stack.json")
+	if err != nil {
+		return err
 	}
 
-	curStack := &instance.Stack{
-		ID:   1,
-		Name: "DHIS2",
-		OptionalParams: []instance.OptionalParam{
-			{
-				ID:   12,
-				Name: "LOG4J2_CONFIGURATION_FILE",
-			},
-			{
-				ID:   12,
-				Name: "LOG4J2_CONFIGURATION_FILE",
-			},
-			{
-				ID:   12,
-				Name: "LOG4J2_CONFIGURATION_FILE",
-			},
-			{
-				ID:   12,
-				Name: "LOG4J2_CONFIGURATION_FILE",
-			},
-			{
-				ID:   12,
-				Name: "LOG4J2_CONFIGURATION_FILE",
-			},
-		},
-		RequiredParams: []instance.RequiredParam{
-			{
-				ID:   34,
-				Name: "DB_HOST",
-			},
-		},
-	}
-	stackDetails, _ := json.MarshalIndent(curStack, "", "  ")
-	view := viewport.New(40, 30)
-	view.SetContent(string(stackDetails))
+	view := viewport.New(0, 0)
 	view.KeyMap = viewport.KeyMap{
 		PageDown: key.NewBinding(
 			key.WithKeys("pgdown", " ", "f"),
@@ -136,16 +136,14 @@ func main() {
 		),
 	}
 
+	// TODO turn off list help
+	// TODO create separate help combining list and viewport keys
 	m := model{
-		curStack: curStack,
-		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
+		list:     list,
+		curStack: string(curStack),
 		viewport: view,
 	}
-	m.list.Title = "Stacks"
-
 	p := tea.NewProgram(m, tea.WithAltScreen())
-	if err := p.Start(); err != nil {
-		fmt.Printf("Program failed: %s", err)
-		os.Exit(1)
-	}
+
+	return p.Start()
 }

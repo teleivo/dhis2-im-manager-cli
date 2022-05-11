@@ -1,0 +1,42 @@
+[
+  {
+    "ID": 1,
+    "CreatedAt": "2022-05-11T11:15:37.150645Z",
+    "UpdatedAt": "2022-05-11T11:15:37.150645Z",
+    "DeletedAt": null,
+    "Name": "dhis2",
+    "Instances": null
+  },
+  {
+    "ID": 2,
+    "CreatedAt": "2022-05-11T11:15:37.17318Z",
+    "UpdatedAt": "2022-05-11T11:15:37.17318Z",
+    "DeletedAt": null,
+    "Name": "dhis2-core",
+    "Instances": null
+  },
+  {
+    "ID": 3,
+    "CreatedAt": "2022-05-11T11:15:37.188983Z",
+    "UpdatedAt": "2022-05-11T11:15:37.188983Z",
+    "DeletedAt": null,
+    "Name": "dhis2-db",
+    "Instances": null
+  },
+  {
+    "ID": 4,
+    "CreatedAt": "2022-05-11T11:15:37.198225Z",
+    "UpdatedAt": "2022-05-11T11:15:37.198225Z",
+    "DeletedAt": null,
+    "Name": "im-job-runner",
+    "Instances": null
+  },
+  {
+    "ID": 5,
+    "CreatedAt": "2022-05-11T11:15:37.210702Z",
+    "UpdatedAt": "2022-05-11T11:15:37.210702Z",
+    "DeletedAt": null,
+    "Name": "whoami-go",
+    "Instances": null
+  }
+]
