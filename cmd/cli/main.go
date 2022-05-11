@@ -49,15 +49,18 @@ func run(args []string, out io.Writer) error {
 	// 	return err
 	// }
 	fmt.Println("stacks")
-	err = im.Stacks()
+	sts, err := im.Stacks()
 	if err != nil {
 		return err
 	}
+	fmt.Printf("stacks: %+v\n", sts)
+
 	fmt.Println("stack", *stack)
-	err = im.Stack(*stack)
+	st, err := im.Stack(*stack)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("stack: %+v\n", st)
 
 	_ = out
 	return nil

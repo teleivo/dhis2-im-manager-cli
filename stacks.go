@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -24,18 +25,22 @@ type model struct {
 	manager      *Manager
 	list         list.Model
 	stacks       []Stacks
+	ready        bool
+	viewport     viewport.Model
 	curStack     *Stack
 	curStackJson string
 }
 
 func NewStacks(im *Manager) model {
 	var items []list.Item
-	m := model{
+	list := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	list.SetShowTitle(false)
+	list.SetShowHelp(false)
+
+	return model{
 		manager: im,
-		list:    list.New(items, list.NewDefaultDelegate(), 0, 0),
+		list:    list,
 	}
-	m.list.Title = "Stacks"
-	return m
 }
 
 func (m model) Init() tea.Cmd {
@@ -86,6 +91,7 @@ func (m model) fetchStack(id int) tea.Cmd {
 
 // TODO load JSON when moving between list entries
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -95,9 +101,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			st := m.stacks[m.list.Index()]
 			return m, m.fetchStack(st.ID)
 		}
-	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
 	case stacksMsg:
 		m.stacks = msg.stacks
 		cmd := m.list.SetItems(msg.items)
@@ -105,27 +108,51 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stackMsg:
 		m.curStack = msg.stack
 		m.curStackJson = msg.stackJson
+		m.viewport.SetContent(m.curStackJson)
 		// TODO any cmd necessary?
 		// TODO should curStack be cleared at any point?
 		// TODO return model and nil or fall through?
 		return m, nil
+	case tea.WindowSizeMsg:
+		h, v := docStyle.GetFrameSize()
+		// TODO split space more "equally" between the list and the viewport
+		m.list.SetSize(msg.Width-h, msg.Height-v)
+
+		if !m.ready {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport.Width = msg.Width - h
+			m.viewport.Height = msg.Height - v
+			m.viewport.SetContent(m.curStackJson)
+			m.ready = true
+		} else {
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height - v
+		}
 	}
 
-	newList, cmd := m.list.Update(msg)
-	m.list = newList
-	return m, cmd
+	// Handle keyboard and mouse events
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	cmds = append(cmds, cmd)
+	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
 	var doc strings.Builder
 	list := docStyle.Render(m.list.View())
 
-	// TODO use a pager for the JSON
-	if m.curStack != nil {
+	if m.curStackJson != "" {
 		doc.WriteString(lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			list,
-			docStyle.Render(m.curStackJson),
+			docStyle.Render(m.viewport.View()),
 		))
 	} else {
 		doc.WriteString(list)
