@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,9 +38,26 @@ func NewStacks(im *Manager) model {
 	list.SetShowTitle(false)
 	list.SetShowHelp(false)
 
+	view := viewport.New(0, 0)
+	view.KeyMap = viewport.KeyMap{
+		PageDown: key.NewBinding(
+			key.WithKeys("pgdown", " ", "f"),
+		),
+		PageUp: key.NewBinding(
+			key.WithKeys("pgup", "b"),
+		),
+		Up: key.NewBinding(
+			key.WithKeys("u", "ctrl+u"),
+		),
+		Down: key.NewBinding(
+			key.WithKeys("d", "ctrl+d"),
+		),
+	}
+
 	return model{
-		manager: im,
-		list:    list,
+		manager:  im,
+		list:     list,
+		viewport: view,
 	}
 }
 
