@@ -105,9 +105,6 @@ func (m *Manager) Create(name string, group, stack int) error {
 		return err
 	}
 
-	// TODO remove
-	fmt.Printf("%+v\n", cb)
-
 	return nil
 }
 
@@ -153,6 +150,19 @@ func (m *Manager) Stack(id int) (*Stack, error) {
 	}
 
 	return sb, nil
+}
+
+func (m *Manager) StackDetails(ids ...int) ([]*Stack, error) {
+	var sts []*Stack
+	for _, id := range ids {
+		st, err := m.Stack(id)
+		if err != nil {
+			return nil, err
+		}
+		sts = append(sts, st)
+	}
+
+	return sts, nil
 }
 
 type Stacks struct {

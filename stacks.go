@@ -23,18 +23,36 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
 type model struct {
-	manager      *Manager
-	list         list.Model
-	stacks       []Stacks
-	ready        bool
-	viewport     viewport.Model
-	curStack     *Stack
-	curStackJson string
+	manager       *Manager
+	ready         bool
+	list          list.Model
+	viewport      viewport.Model
+	curIndex      int
+	curStackJson  string
+	stacks        []Stacks
+	stacksDetails []*Stack
+	stacksJson    []string
+}
+
+type selectItemMsg struct {
+	index int
 }
 
 func NewStacks(im *Manager) model {
+	d := list.NewDefaultDelegate()
+	d.ShowDescription = false
+	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
+		// get the currently selected item
+		// cannot just listen to mouse down/up events as list model has not
+		// been updated as stacks model receives the event before. Thus, rely
+		// on a delegate which is called after the list model was updated.
+		return func() tea.Msg {
+			return selectItemMsg{index: m.Index()}
+		}
+	}
+
 	var items []list.Item
-	list := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	list := list.New(items, d, 0, 0)
 	list.SetShowTitle(false)
 	list.SetShowHelp(false)
 
@@ -58,6 +76,7 @@ func NewStacks(im *Manager) model {
 		manager:  im,
 		list:     list,
 		viewport: view,
+		curIndex: -1,
 	}
 }
 
@@ -84,25 +103,34 @@ func (m model) fetchStacks() tea.Cmd {
 	}
 }
 
-type stackMsg struct {
-	stack     *Stack
-	stackJson string
+type stacksDetailsMsg struct {
+	stacks     []*Stack
+	stacksJson []string
 }
 
-func (m model) fetchStack(id int) tea.Cmd {
+func (m model) fetchStacksDetails() tea.Cmd {
 	return func() tea.Msg {
-		st, err := m.manager.Stack(id)
+		var ids []int
+		for _, st := range m.stacks {
+			ids = append(ids, st.ID)
+		}
+		sts, err := m.manager.StackDetails(ids...)
 		// TODO put into message and handle in view
 		if err != nil {
 			return err
 		}
-		stackJson, err := json.MarshalIndent(st, "", "  ")
-		if err != nil {
-			return err
+
+		var stackJson []string
+		for _, st := range sts {
+			sj, err := json.MarshalIndent(st, "", "  ")
+			if err != nil {
+				return err
+			}
+			stackJson = append(stackJson, string(sj))
 		}
-		return stackMsg{
-			stack:     st,
-			stackJson: string(stackJson),
+		return stacksDetailsMsg{
+			stacks:     sts,
+			stacksJson: stackJson,
 		}
 	}
 }
@@ -111,26 +139,30 @@ func (m model) fetchStack(id int) tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "enter":
-			st := m.stacks[m.list.Index()]
-			return m, m.fetchStack(st.ID)
-		}
 	case stacksMsg:
 		m.stacks = msg.stacks
-		cmd := m.list.SetItems(msg.items)
-		return m, cmd
-	case stackMsg:
-		m.curStack = msg.stack
-		m.curStackJson = msg.stackJson
-		m.viewport.SetContent(m.curStackJson)
-		// TODO any cmd necessary?
-		// TODO should curStack be cleared at any point?
-		// TODO return model and nil or fall through?
+		cmds = append(cmds, m.list.SetItems(msg.items))
+		cmds = append(cmds, m.fetchStacksDetails())
+		// TODO return or let it fall through?
+		return m, tea.Batch(cmds...)
+	case stacksDetailsMsg:
+		m.stacksDetails = msg.stacks
+		m.stacksJson = msg.stacksJson
+		// TODO should I set the content here as well as in selectItemMsg?
+		if m.curIndex >= 0 {
+			m.curStackJson = m.stacksJson[m.curIndex]
+			m.viewport.SetContent(m.curStackJson)
+		}
 		return m, nil
+	case selectItemMsg:
+		if msg.index != m.curIndex {
+			m.curIndex = msg.index
+			if len(m.stacksJson) > 0 {
+				m.curStackJson = m.stacksJson[m.curIndex]
+				m.viewport.SetContent(m.curStackJson)
+			}
+			return m, nil
+		}
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		// TODO split space more "equally" between the list and the viewport
