@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -13,104 +12,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/reflow/truncate"
 	instance "github.com/teleivo/dhis2-im-manager-cli"
 )
 
-const (
-	ellipsis = "…"
-)
-
 var docStyle = lipgloss.NewStyle().Margin(1, 2)
-
-// Create my own delegate that
-type delegate struct {
-	styles list.DefaultItemStyles
-}
-
-func newDelegate() *delegate {
-	return &delegate{
-		styles: list.NewDefaultItemStyles(),
-	}
-}
-
-// Height returns the delegate's preferred height.
-func (d delegate) Height() int {
-	return 1
-}
-
-// Spacing returns the delegate's spacing.
-func (d delegate) Spacing() int {
-	return 1
-}
-
-func (d delegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
-	// get the currently selected item
-	// cannot just listen to mouse down/up events as list model has not
-	// been updated as stacks model receives the event before. Thus, rely
-	// on a delegate which is called after the list model was updated.
-	return func() tea.Msg {
-		log.Println("list index: ", m.Index())
-		// if d.index == -1 || d.index != m.Index() {
-		return selectItemMsg{index: m.Index()}
-		// }
-		// return nil
-	}
-}
-
-func (d delegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	var (
-		title        string
-		matchedRunes []int
-		s            = &d.styles
-	)
-
-	if i, ok := item.(list.DefaultItem); ok {
-		title = i.Title()
-	} else {
-		return
-	}
-
-	// Prevent text from exceeding list width
-	if m.Width() > 0 {
-		textwidth := uint(m.Width() - s.NormalTitle.GetPaddingLeft() - s.NormalTitle.GetPaddingRight())
-		title = truncate.StringWithTail(title, textwidth, ellipsis)
-	}
-
-	// Conditions
-	var (
-		isSelected  = index == m.Index()
-		emptyFilter = m.FilterState() == list.Filtering && m.FilterValue() == ""
-		isFiltered  = m.FilterState() == list.Filtering || m.FilterState() == list.FilterApplied
-	)
-
-	if isFiltered && index < len(m.VisibleItems()) {
-		// Get indices of matched characters
-		matchedRunes = m.MatchesForItem(index)
-	}
-
-	if emptyFilter {
-		title = s.DimmedTitle.Render(title)
-	} else if isSelected && m.FilterState() != list.Filtering {
-		if isFiltered {
-			// Highlight matches
-			unmatched := s.SelectedTitle.Inline(true)
-			matched := unmatched.Copy().Inherit(s.FilterMatch)
-			title = lipgloss.StyleRunes(title, matchedRunes, matched, unmatched)
-		}
-		title = s.SelectedTitle.Render(title)
-	} else {
-		if isFiltered {
-			// Highlight matches
-			unmatched := s.NormalTitle.Inline(true)
-			matched := unmatched.Copy().Inherit(s.FilterMatch)
-			title = lipgloss.StyleRunes(title, matchedRunes, matched, unmatched)
-		}
-		title = s.NormalTitle.Render(title)
-	}
-
-	fmt.Fprintf(w, "%s", title)
-}
 
 type selectItemMsg struct {
 	index int
@@ -223,7 +128,19 @@ func run() error {
 	for _, v := range stacks {
 		items = append(items, item{title: fmt.Sprintf("%s (%d)", v.Name, v.ID)})
 	}
-	list := list.New(items, newDelegate(), 0, 0)
+	dl := list.NewDefaultDelegate()
+	dl.ShowDescription = false
+	dl.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
+		// get the currently selected item
+		// cannot just listen to mouse down/up events as list model has not
+		// been updated as stacks model receives the event before. Thus, rely
+		// on a delegate which is called after the list model was updated.
+		return func() tea.Msg {
+			log.Println("list index: ", m.Index())
+			return selectItemMsg{index: m.Index()}
+		}
+	}
+	list := list.New(items, dl, 0, 0)
 	list.SetShowTitle(false)
 	list.SetShowHelp(false)
 
