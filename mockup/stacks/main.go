@@ -33,6 +33,7 @@ type model struct {
 	ready    bool
 	list     list.Model
 	viewport viewport.Model
+	curIndex int
 	curStack string
 }
 
@@ -49,9 +50,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case selectItemMsg:
-		log.Println("index: ", msg.index)
-		if msg.index >= 0 {
-			// TODO only SetContent if index changed?
+		if msg.index != m.curIndex {
+			log.Println("cur index: ", m.curIndex, "new index: ", msg.index)
+			m.curIndex = msg.index
 			// st := m.stacks[msg.index]
 			// cmds = append(cmds, m.fetchStack(st.ID))
 			m.viewport.SetContent(fmt.Sprintf("index change event: %d", msg.index))
@@ -136,7 +137,6 @@ func run() error {
 		// been updated as stacks model receives the event before. Thus, rely
 		// on a delegate which is called after the list model was updated.
 		return func() tea.Msg {
-			log.Println("list index: ", m.Index())
 			return selectItemMsg{index: m.Index()}
 		}
 	}
@@ -171,6 +171,7 @@ func run() error {
 		list:     list,
 		curStack: string(curStack),
 		viewport: view,
+		curIndex: -1,
 	}
 	logfile := os.Getenv("BUBBLETEA_LOG")
 	if logfile != "" {
