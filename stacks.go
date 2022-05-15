@@ -12,8 +12,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
-
 type item struct {
 	title, desc string
 }
@@ -22,7 +20,7 @@ func (i item) Title() string       { return i.title }
 func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
-type model struct {
+type stacks struct {
 	manager       *Manager
 	ready         bool
 	list          list.Model
@@ -38,7 +36,7 @@ type selectItemMsg struct {
 	index int
 }
 
-func NewStacks(im *Manager) model {
+func NewStacks(im *Manager) stacks {
 	d := list.NewDefaultDelegate()
 	d.ShowDescription = false
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
@@ -72,7 +70,7 @@ func NewStacks(im *Manager) model {
 		),
 	}
 
-	return model{
+	return stacks{
 		manager:  im,
 		list:     list,
 		viewport: view,
@@ -80,7 +78,7 @@ func NewStacks(im *Manager) model {
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m stacks) Init() tea.Cmd {
 	return m.fetchStacks()
 }
 
@@ -89,7 +87,7 @@ type stacksMsg struct {
 	items  []list.Item
 }
 
-func (m model) fetchStacks() tea.Cmd {
+func (m stacks) fetchStacks() tea.Cmd {
 	return func() tea.Msg {
 		sts, err := m.manager.Stacks()
 		if err != nil {
@@ -108,7 +106,7 @@ type stacksDetailsMsg struct {
 	stacksJson []string
 }
 
-func (m model) fetchStacksDetails() tea.Cmd {
+func (m stacks) fetchStacksDetails() tea.Cmd {
 	return func() tea.Msg {
 		var ids []int
 		for _, st := range m.stacks {
@@ -135,8 +133,7 @@ func (m model) fetchStacksDetails() tea.Cmd {
 	}
 }
 
-// TODO load JSON when moving between list entries
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m stacks) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case stacksMsg:
@@ -164,6 +161,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case tea.WindowSizeMsg:
+		// TODO this should not take up all the space
 		h, v := docStyle.GetFrameSize()
 		// TODO split space more "equally" between the list and the viewport
 		m.list.SetSize(msg.Width-h, msg.Height-v)
@@ -194,7 +192,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m stacks) View() string {
 	var doc strings.Builder
 	list := docStyle.Render(m.list.View())
 

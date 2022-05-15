@@ -41,7 +41,9 @@ func run(args []string, out io.Writer) error {
 	}
 
 	m := instance.NewStacks(im)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	ui := instance.NewUI(im, m)
+
+	p := tea.NewProgram(ui, tea.WithAltScreen())
 
 	_ = out
 	return p.Start()
