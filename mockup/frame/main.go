@@ -77,10 +77,6 @@ var (
 			Padding(0, 1).
 			MarginRight(1)
 
-	encodingStyle = statusNugget.Copy().
-			Background(lipgloss.Color("#A550DF")).
-			Align(lipgloss.Right)
-
 	statusText = lipgloss.NewStyle().Inherit(statusBarStyle)
 
 	fishCakeStyle = statusNugget.Copy().Background(lipgloss.Color("#6124DF"))
@@ -106,22 +102,25 @@ func main() {
 		doc.WriteString(row + "\n\n")
 	}
 
+	// Current Component
+	{
+		// should go here
+	}
+
 	// Status bar
 	{
 		w := lipgloss.Width
 
-		statusKey := statusStyle.Render("STATUS")
-		encoding := encodingStyle.Render("UTF-8")
-		fishCake := fishCakeStyle.Render("🍥 Fish Cake")
+		auth := statusStyle.Render("user@some.com")
+		managerUrl := fishCakeStyle.Render("@ instance.test.com")
 		statusVal := statusText.Copy().
-			Width(width - w(statusKey) - w(encoding) - w(fishCake)).
+			Width(width - w(auth) - w(managerUrl)).
 			Render("Ravishing")
 
 		bar := lipgloss.JoinHorizontal(lipgloss.Top,
-			statusKey,
+			auth,
 			statusVal,
-			encoding,
-			fishCake,
+			managerUrl,
 		)
 
 		doc.WriteString(statusBarStyle.Width(width).Render(bar))
